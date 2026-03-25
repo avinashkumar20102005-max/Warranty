@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SupplyGuard AI — Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #f0f2f7;
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.sheet {
+  width: 1100px;
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* ── HEADER BAND ── */
+.header {
+  background: #0b0f1a;
+  padding: 28px 40px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 3px solid #1e90ff;
+}
+
+.header-left {}
+.tag-line {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: #1e90ff;
+  margin-bottom: 6px;
+  opacity: 0.8;
+}
+.header-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.header-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  color: rgba(255,255,255,0.45);
+  margin-top: 5px;
+  letter-spacing: 0.06em;
+}
+
+.header-meta {
+  display: flex;
+  gap: 24px;
+}
+.meta-item {
+  text-align: center;
+}
+.meta-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e90ff;
+  line-height: 1;
+}
+.meta-key {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.35);
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+
+/* ── BODY ── */
+.body {
+  padding: 36px 40px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── LAYER LABEL ── */
+.layer-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.layer-pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  padding: 4px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.layer-line {
+  flex: 1;
+  height: 1px;
+  opacity: 0.15;
+}
+
+/* ── INPUT LAYER ── */
+.layer-inputs .layer-pill { background:#e8f4ff; color:#1e90ff; }
+.layer-inputs .layer-line { background:#1e90ff; }
+
+.inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.input-card {
+  background: #f7faff;
+  border: 1.5px solid #d0e5ff;
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.input-card::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:3px;
+  background: linear-gradient(90deg, #1e90ff, #54b3ff);
+  border-radius: 3px 3px 0 0;
+}
+.input-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(30,144,255,0.15); }
+
+.input-icon {
+  font-size: 22px;
+  margin-bottom: 8px;
+  display: block;
+}
+.input-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a2540;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.input-detail {
+  font-size: 9px;
+  color: #8096b8;
+  line-height: 1.4;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── CONNECTOR ── */
+.connector-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 4px 0;
+  position: relative;
+  height: 50px;
+}
+
+.conn-line {
+  width: 2px;
+  flex: 1;
+}
+.conn-arrow {
+  font-size: 14px;
+  line-height: 1;
+}
+.conn-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  padding: 3px 10px;
+  border-radius: 10px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: calc(50% + 12px);
+  white-space: nowrap;
+}
+
+/* ── ORCHESTRATOR ── */
+.layer-orch .layer-pill { background:#fff3e0; color:#e65c00; }
+.layer-orch .layer-line { background:#e65c00; }
+
+.orch-card {
+  background: linear-gradient(135deg, #0b0f1a 0%, #13193a 100%);
+  border-radius: 16px;
+  padding: 24px 28px;
+  position: relative;
+  overflow: hidden;
+  border: 1.5px solid rgba(230,92,0,0.4);
+}
+.orch-card::after {
+  content:'';
+  position:absolute;
+  top:-40px; right:-40px;
+  width:160px; height:160px;
+  border-radius:50%;
+  background: radial-gradient(circle, rgba(230,92,0,0.12) 0%, transparent 70%);
+  pointer-events:none;
+}
+
+.orch-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.orch-title-group {}
+.orch-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: #e65c00;
+  margin-bottom: 4px;
+  opacity: 0.8;
+}
+.orch-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+}
+.orch-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.12em;
+}
+.pulse {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #00e676;
+  box-shadow: 0 0 8px #00e676;
+  animation: blink 1.8s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.orch-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 16px;
+}
+.orch-col {}
+.orch-col-head {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  color: #e65c00;
+  opacity: 0.6;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(230,92,0,0.15);
+}
+.orch-col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.orch-col ul li {
+  font-size: 10px;
+  color: rgba(255,255,255,0.55);
+  padding-left: 10px;
+  position: relative;
+  line-height: 1.4;
+}
+.orch-col ul li::before {
+  content:'›';
+  position:absolute;
+  left: 0;
+  color: #e65c00;
+  opacity: 0.6;
+  font-size: 12px;
+  top: -1px;
+}
+
+.orch-tags {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.orch-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(230,92,0,0.3);
+  color: rgba(230,92,0,0.7);
+  letter-spacing: 0.1em;
+}
+
+/* ── AGENT LAYER ── */
+.layer-agents .layer-pill { background:#f3eeff; color:#7c3aed; }
+.layer-agents .layer-line { background:#7c3aed; }
+
+.agents-connector {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  height: 50px;
+  position: relative;
+}
+.agents-connector .horiz {
+  position: absolute;
+  bottom: 0;
+  left: 16.5%; right: 16.5%;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(124,58,237,0.3), rgba(124,58,237,0.7), rgba(124,58,237,0.3));
+  border-radius: 2px;
+}
+.vert-drop {
+  position: absolute;
+  top: 0;
+  left: 50%; transform: translateX(-50%);
+  width: 2px; height: 100%;
+  background: linear-gradient(to bottom, rgba(230,92,0,0.5), rgba(124,58,237,0.5));
+}
+.drop-left-v { position:absolute; bottom:0; left:16.5%; transform:translateX(-50%); width:2px; height:50%; background: rgba(124,58,237,0.5); }
+.drop-right-v { position:absolute; bottom:0; right:16.5%; transform:translateX(50%); width:2px; height:50%; background: rgba(124,58,237,0.5); }
+
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.agent-card {
+  border-radius: 14px;
+  padding: 20px;
+  position: relative;
+  border: 1.5px solid;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.agent-card:hover { transform: translateY(-3px); }
+.agent-card::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:4px;
+  border-radius:4px 4px 0 0;
+}
+
+/* Agent 1 — violet */
+.agent-1 {
+  background: #faf8ff;
+  border-color: #c4b5fd;
+}
+.agent-1::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+.agent-1:hover { box-shadow: 0 10px 30px rgba(124,58,237,0.15); }
+
+/* Agent 2 — indigo */
+.agent-2 {
+  background: #f5f7ff;
+  border-color: #a5b4fc;
+}
+.agent-2::before { background: linear-gradient(90deg, #4f46e5, #818cf8); }
+.agent-2:hover { box-shadow: 0 10px 30px rgba(79,70,229,0.15); }
+
+/* Agent 3 — teal */
+.agent-3 {
+  background: #f5fffe;
+  border-color: #5eead4;
+}
+.agent-3::before { background: linear-gradient(90deg, #0d9488, #5eead4); }
+.agent-3:hover { box-shadow: 0 10px 30px rgba(13,148,136,0.15); }
+
+.agent-num {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  opacity: 0.07;
+  color: #000;
+  line-height: 1;
+}
+
+.agent-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.agent-1 .agent-badge { color: #7c3aed; }
+.agent-2 .agent-badge { color: #4f46e5; }
+.agent-3 .agent-badge { color: #0d9488; }
+
+.agent-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.agent-1 .agent-dot { background: #7c3aed; box-shadow: 0 0 6px #7c3aed; animation: blink 2s ease-in-out infinite; }
+.agent-2 .agent-dot { background: #4f46e5; box-shadow: 0 0 6px #4f46e5; animation: blink 2s 0.6s ease-in-out infinite; }
+.agent-3 .agent-dot { background: #0d9488; box-shadow: 0 0 6px #0d9488; animation: blink 2s 1.2s ease-in-out infinite; }
+
+.agent-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.agent-desc {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.agent-io {
+  background: rgba(0,0,0,0.04);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 8.5px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+.agent-io strong {
+  color: #475569;
+}
+
+.agent-fmea {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+/* ── OUTPUT LAYER ── */
+.layer-outputs .layer-pill { background:#e8faf4; color:#059669; }
+.layer-outputs .layer-line { background:#059669; }
+
+.outputs-connector {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  height: 50px;
+  position: relative;
+}
+.outputs-connector .horiz-out {
+  position: absolute;
+  top: 0; left: 12%; right: 12%;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(5,150,105,0.2), rgba(5,150,105,0.6), rgba(5,150,105,0.2));
+  border-radius: 2px;
+}
+.rise-col {
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+.rise-col::before {
+  content:'';
+  position: absolute;
+  top: 0;
+  left: 50%; transform: translateX(-50%);
+  width: 2px; height: 100%;
+  background: linear-gradient(to bottom, rgba(5,150,105,0.4), transparent);
+}
+
+.outputs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.output-card {
+  border-radius: 12px;
+  padding: 16px 14px;
+  border: 1.5px solid;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.output-card:hover { transform: translateY(-3px); }
+.output-card::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+}
+
+.out-1 { background: #f0fdf9; border-color: #6ee7b7; }
+.out-1::before { background: linear-gradient(90deg, #059669, #34d399); }
+.out-1:hover { box-shadow: 0 8px 20px rgba(5,150,105,0.15); }
+
+.out-2 { background: #fefce8; border-color: #fde68a; }
+.out-2::before { background: linear-gradient(90deg, #d97706, #fbbf24); }
+.out-2:hover { box-shadow: 0 8px 20px rgba(217,119,6,0.15); }
+
+.out-3 { background: #fff1f2; border-color: #fecdd3; }
+.out-3::before { background: linear-gradient(90deg, #e11d48, #fb7185); }
+.out-3:hover { box-shadow: 0 8px 20px rgba(225,29,72,0.15); }
+
+.out-4 { background: #eff6ff; border-color: #bfdbfe; }
+.out-4::before { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+.out-4:hover { box-shadow: 0 8px 20px rgba(37,99,235,0.15); }
+
+.out-mode {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+.out-1 .out-mode { background: #d1fae5; color: #059669; }
+.out-2 .out-mode { background: #fef3c7; color: #d97706; }
+.out-3 .out-mode { background: #ffe4e6; color: #e11d48; }
+.out-4 .out-mode { background: #dbeafe; color: #2563eb; }
+
+.out-icon { font-size: 20px; margin-bottom: 6px; display: block; }
+.out-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 5px;
+}
+.out-desc {
+  font-size: 10px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* ── AUDIT STRIP ── */
+.audit-strip {
+  margin-top: 24px;
+  background: #0b0f1a;
+  border-radius: 12px;
+  padding: 16px 20px;
+  border: 1px solid rgba(30,144,255,0.2);
+}
+
+.audit-strip-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.audit-strip-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: #1e90ff;
+  opacity: 0.7;
+}
+.audit-dot { width:6px; height:6px; border-radius:50%; background:#00e676; box-shadow:0 0 6px #00e676; animation: blink 1.5s ease-in-out infinite; }
+
+.audit-rows {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.audit-step {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 10px;
+}
+.audit-step-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: #1e90ff;
+  opacity: 0.6;
+  margin-bottom: 4px;
+}
+.audit-step-who {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+.s1 { color: #54b3ff; }
+.s2 { color: #e65c00; }
+.s3 { color: #a78bfa; }
+.s4 { color: #818cf8; }
+.s5 { color: #5eead4; }
+
+.audit-step-text {
+  font-size: 9px;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.4;
+}
+
+/* ── FOOTER ── */
+.footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.footer-card {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+}
+.footer-card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.footer-card-icon { font-size: 13px; }
+.footer-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.footer-card ul li {
+  font-size: 10px;
+  color: #64748b;
+  padding-left: 12px;
+  position: relative;
+  line-height: 1.4;
+}
+.footer-card ul li::before {
+  content:'•';
+  position: absolute;
+  left: 2px;
+  color: #94a3b8;
+}
+.footer-card ul li strong {
+  color: #334155;
+  font-weight: 500;
+}
+
+.doc-footer {
+  text-align: center;
+  padding: 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #cbd5e1;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="tag-line">SYSTEM ARCHITECTURE · PS-05 · ET AI HACKATHON 2026</div>
+      <div class="header-title">SupplyGuard AI</div>
+      <div class="header-sub">Multi-Agent Supply Chain Disruption Intelligence &amp; Autonomous Action System</div>
+    </div>
+    <div class="header-meta">
+      <div class="meta-item">
+        <div class="meta-val">3</div>
+        <div class="meta-key">Agents</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-val">5</div>
+        <div class="meta-key">Input Sources</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-val">4</div>
+        <div class="meta-key">Action Types</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-val" style="font-size:16px; padding-top:3px;">₹47L+</div>
+        <div class="meta-key">Exposure Saved</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- LAYER 1: INPUTS -->
+    <div class="layer-label layer-inputs">
+      <div class="layer-pill">① Input Signal Layer</div>
+      <div class="layer-line"></div>
+    </div>
+
+    <div class="inputs-grid">
+      <div class="input-card">
+        <span class="input-icon">🌩️</span>
+        <div class="input-name">Weather &amp; Climate</div>
+        <div class="input-detail">OpenWeatherMap · IMD alerts · Cyclone warnings</div>
+      </div>
+      <div class="input-card">
+        <span class="input-icon">🚢</span>
+        <div class="input-name">Port &amp; Vessel Tracker</div>
+        <div class="input-detail">VesselFinder API · Congestion index · ETA deviation</div>
+      </div>
+      <div class="input-card">
+        <span class="input-icon">🏭</span>
+        <div class="input-name">Supplier Health DB</div>
+        <div class="input-detail">Credit signals · Delivery history · Mock ERP/SAP</div>
+      </div>
+      <div class="input-card">
+        <span class="input-icon">📰</span>
+        <div class="input-name">Live News Feed</div>
+        <div class="input-detail">Claude Web Search · Geopolitical risk · Trade policy</div>
+      </div>
+      <div class="input-card">
+        <span class="input-icon">📦</span>
+        <div class="input-name">Internal ERP / WMS</div>
+        <div class="input-detail">Order book · Inventory · SLA deadlines · Open POs</div>
+      </div>
+    </div>
+
+    <!-- connector -->
+    <div style="display:flex;justify-content:center;align-items:center;height:44px;position:relative;">
+      <div style="position:absolute;left:50%;transform:translateX(-50%);width:2px;height:100%;background:linear-gradient(to bottom,#1e90ff,#e65c00);"></div>
+      <div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);color:#e65c00;font-size:12px;">▼</div>
+      <div style="position:absolute;left:calc(50% + 14px);top:50%;transform:translateY(-50%);background:#fff7ed;color:#e65c00;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.14em;padding:3px 10px;border-radius:10px;border:1px solid #fed7aa;">INGESTION STREAM</div>
+    </div>
+
+    <!-- LAYER 2: ORCHESTRATOR -->
+    <div class="layer-label layer-orch">
+      <div class="layer-pill">② Orchestrator Layer</div>
+      <div class="layer-line"></div>
+    </div>
+
+    <div class="orch-card">
+      <div class="orch-header">
+        <div class="orch-title-group">
+          <div class="orch-eyebrow">CTRL-00 · MISSION CONTROL</div>
+          <div class="orch-title">Central Orchestrator Agent</div>
+        </div>
+        <div class="orch-status">
+          <div class="pulse"></div>
+          ACTIVE · MONITORING
+        </div>
+      </div>
+
+      <div class="orch-cols">
+        <div class="orch-col">
+          <div class="orch-col-head">RESPONSIBILITIES</div>
+          <ul>
+            <li>Dispatch tasks to sub-agents</li>
+            <li>Route inter-agent messages</li>
+            <li>Manage human approval gates</li>
+            <li>Monitor SLA clock</li>
+          </ul>
+        </div>
+        <div class="orch-col">
+          <div class="orch-col-head">AUDIT TRAIL</div>
+          <ul>
+            <li>Every decision timestamped</li>
+            <li>Full reasoning chain logged</li>
+            <li>Action traceability</li>
+            <li>Rollback state snapshots</li>
+          </ul>
+        </div>
+        <div class="orch-col">
+          <div class="orch-col-head">ERROR HANDLING</div>
+          <ul>
+            <li>Agent failure detection</li>
+            <li>Auto-retry with backoff</li>
+            <li>SLA breach escalation</li>
+            <li>Graceful degradation</li>
+          </ul>
+        </div>
+        <div class="orch-col">
+          <div class="orch-col-head">TECH STACK</div>
+          <ul>
+            <li>LangGraph orchestration</li>
+            <li>Claude Sonnet 4 API</li>
+            <li>SQLite audit log</li>
+            <li>WebSocket event bus</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="orch-tags">
+        <span class="orch-tag">STATEFUL</span>
+        <span class="orch-tag">FAULT-TOLERANT</span>
+        <span class="orch-tag">AUDITABLE</span>
+        <span class="orch-tag">HUMAN-IN-LOOP</span>
+        <span class="orch-tag">ASYNC</span>
+        <span class="orch-tag">COST-GATED APPROVAL</span>
+      </div>
+    </div>
+
+    <!-- orch → agents connector -->
+    <div class="agents-connector">
+      <div class="vert-drop"></div>
+      <div class="horiz"></div>
+      <div class="drop-left-v"></div>
+      <div class="drop-right-v"></div>
+      <span style="position:absolute;bottom:-4px;left:16.5%;transform:translateX(-50%);color:rgba(124,58,237,0.6);font-size:10px;">▼</span>
+      <span style="position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);color:rgba(124,58,237,0.6);font-size:10px;">▼</span>
+      <span style="position:absolute;bottom:-4px;right:16.5%;transform:translateX(50%);color:rgba(124,58,237,0.6);font-size:10px;">▼</span>
+    </div>
+
+    <!-- LAYER 3: AGENTS -->
+    <div class="layer-label layer-agents" style="margin-top:4px;">
+      <div class="layer-pill">③ Specialized Agent Layer</div>
+      <div class="layer-line"></div>
+    </div>
+
+    <div class="agents-grid">
+
+      <!-- Agent 1 -->
+      <div class="agent-card agent-1">
+        <div class="agent-num">01</div>
+        <div class="agent-badge"><div class="agent-dot"></div>AGT-01 · SIGNAL SCANNER</div>
+        <div class="agent-fmea">⚙ FMEA SEVERITY ENGINE</div>
+        <div class="agent-title">Signal Scanner Agent</div>
+        <div class="agent-desc">Ingests all 5 input streams continuously. Scores disruptions using aerospace FMEA methodology — Probability × Severity × Detectability — then emits structured disruption events.</div>
+        <div class="agent-io">
+          <strong>IN:</strong> Raw API feeds · ERP events<br>
+          <strong>OUT:</strong> DisruptionEvent { type, score, nodes }
+        </div>
+      </div>
+
+      <!-- Agent 2 -->
+      <div class="agent-card agent-2">
+        <div class="agent-num">02</div>
+        <div class="agent-badge"><div class="agent-dot"></div>AGT-02 · IMPACT MODELER</div>
+        <div class="agent-title">Impact Modeler Agent</div>
+        <div class="agent-desc">Traverses the supply dependency graph downstream from a disruption. Computes orders at risk, financial exposure in ₹, SLA breach timeline — like fault-tree propagation in aerospace systems.</div>
+        <div class="agent-io">
+          <strong>IN:</strong> DisruptionEvent from AGT-01<br>
+          <strong>OUT:</strong> ImpactReport { exposure_₹, breach_hrs }
+        </div>
+      </div>
+
+      <!-- Agent 3 -->
+      <div class="agent-card agent-3">
+        <div class="agent-num">03</div>
+        <div class="agent-badge"><div class="agent-dot"></div>AGT-03 · ACTION EXECUTOR</div>
+        <div class="agent-title">Action Executor Agent</div>
+        <div class="agent-desc">Generates ranked corrective action playbooks from the ImpactReport. Executes autonomous actions below cost threshold; routes high-cost decisions to human approval gate.</div>
+        <div class="agent-io">
+          <strong>IN:</strong> ImpactReport from AGT-02<br>
+          <strong>OUT:</strong> ActionPlan { steps[], approval_req }
+        </div>
+      </div>
+
+    </div>
+
+    <!-- agents → outputs connector -->
+    <div class="outputs-connector" style="margin-top:4px;">
+      <div class="horiz-out"></div>
+      <div class="rise-col"></div>
+      <div class="rise-col"></div>
+      <div class="rise-col"></div>
+    </div>
+
+    <!-- LAYER 4: OUTPUTS -->
+    <div class="layer-label layer-outputs" style="margin-top:4px;">
+      <div class="layer-pill">④ Action Output Layer</div>
+      <div class="layer-line"></div>
+    </div>
+
+    <div class="outputs-grid">
+      <div class="output-card out-1">
+        <div class="out-mode">AUTO · INSTANT</div>
+        <span class="out-icon">🔀</span>
+        <div class="out-title">Supplier Reroute</div>
+        <div class="out-desc">Auto-switch to pre-approved alternate supplier. PO issued &amp; ERP updated autonomously.</div>
+      </div>
+      <div class="output-card out-2">
+        <div class="out-mode">AUTO · GATED</div>
+        <span class="out-icon">📦</span>
+        <div class="out-title">Safety Stock Release</div>
+        <div class="out-desc">Triggers warehouse buffer release to prevent production line stoppage.</div>
+      </div>
+      <div class="output-card out-3">
+        <div class="out-mode">HUMAN APPROVAL</div>
+        <span class="out-icon">📋</span>
+        <div class="out-title">Procurement Escalation</div>
+        <div class="out-desc">Playbook sent to team via Slack/email with ranked actions &amp; full impact context.</div>
+      </div>
+      <div class="output-card out-4">
+        <div class="out-mode">LIVE · CONTINUOUS</div>
+        <span class="out-icon">📊</span>
+        <div class="out-title">React Dashboard</div>
+        <div class="out-desc">Live disruption map, dependency graph, agent trace, ₹ impact counter in real-time.</div>
+      </div>
+    </div>
+
+    <!-- AUDIT TRACE -->
+    <div class="audit-strip">
+      <div class="audit-strip-header">
+        <div class="audit-dot"></div>
+        <div class="audit-strip-title">LIVE AUDIT TRACE — SCENARIO: CYCLONE ALERT · NHAVA SHEVA PORT</div>
+      </div>
+      <div class="audit-rows">
+        <div class="audit-step">
+          <div class="audit-step-time">T + 00:00</div>
+          <div class="audit-step-who s1">SIGNAL SCANNER</div>
+          <div class="audit-step-text">IMD cyclone detected · FMEA score 8.4/10 · conf. 0.91</div>
+        </div>
+        <div class="audit-step">
+          <div class="audit-step-time">T + 00:03</div>
+          <div class="audit-step-who s2">ORCHESTRATOR</div>
+          <div class="audit-step-text">Dispatched ImpactModeler · event_id #TY-2026-044</div>
+        </div>
+        <div class="audit-step">
+          <div class="audit-step-time">T + 00:07</div>
+          <div class="audit-step-who s3">IMPACT MODELER</div>
+          <div class="audit-step-text">3 orders at risk · ₹47.2L exposure · SLA breach in 5.8 days</div>
+        </div>
+        <div class="audit-step">
+          <div class="audit-step-time">T + 00:09</div>
+          <div class="audit-step-who s4">ACTION EXECUTOR</div>
+          <div class="audit-step-text">Reroute Chennai (+₹1.4L) · Supplier B-04 activated</div>
+        </div>
+        <div class="audit-step">
+          <div class="audit-step-time">T + 00:11</div>
+          <div class="audit-step-who s2">ORCHESTRATOR</div>
+          <div class="audit-step-text">✓ Executed · WMS updated · ₹45.8L exposure mitigated</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER CARDS -->
+    <div class="footer">
+      <div class="footer-card">
+        <div class="footer-card-title"><span class="footer-card-icon">🛠</span> Tech Stack</div>
+        <ul>
+          <li><strong>Claude Sonnet 4</strong> — Agent reasoning core</li>
+          <li><strong>LangGraph</strong> — Multi-agent orchestration</li>
+          <li><strong>FastAPI</strong> — Backend + WebSocket</li>
+          <li><strong>React + D3.js</strong> — Dashboard frontend</li>
+          <li><strong>SQLite</strong> — Audit log persistence</li>
+        </ul>
+      </div>
+      <div class="footer-card">
+        <div class="footer-card-title"><span class="footer-card-icon">✈️</span> Aerospace Advantage</div>
+        <ul>
+          <li><strong>FMEA scoring</strong> — borrowed from failure mode analysis</li>
+          <li><strong>Fault tree propagation</strong> — cascade impact modeling</li>
+          <li><strong>Flight data recorder</strong> — style audit trail</li>
+          <li><strong>Graceful degradation</strong> — fallback action chains</li>
+        </ul>
+      </div>
+      <div class="footer-card">
+        <div class="footer-card-title"><span class="footer-card-icon">📈</span> Impact Model</div>
+        <ul>
+          <li><strong>₹2–4L Cr</strong> annual SC loss in India</li>
+          <li><strong>48 hr</strong> earlier warning vs. manual monitoring</li>
+          <li>200 orders/mo · ₹5L avg SLA penalty</li>
+          <li>12% breach rate → ~3% with SupplyGuard</li>
+          <li><strong>₹8–12 Cr/yr</strong> saved per mid-size firm</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DOC FOOTER -->
+  <div class="doc-footer">
+    SUPPLYGUARD-AI · SYS-ARCH-001 · TEAM LOGINFINITY · ET AI HACKATHON 2026
+  </div>
+
+</div>
+</body>
+</html>
